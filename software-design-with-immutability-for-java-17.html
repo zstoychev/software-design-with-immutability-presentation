@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <title>Software Design with Immutability (for Java 17)</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="reveal-js/dist/reset.css">
+  <link rel="stylesheet" href="reveal-js/dist/reveal.css">
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="reveal-js/dist/theme/white.css" id="theme">
+  <link rel="stylesheet" href="theme/theme.css"/>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide">
+  <h1 class="title">Software Design with Immutability<br />(for Java 17)</h1>
+</section>
+
+<section id="alternatively-software-design-with-values-for-java-17" class="slide level1">
+<h1>Alternatively: Software Design with Values<br />(for Java 17)</h1>
+</section>
+<section id="java-10-features-that-grabbed-my-attention" class="slide level1">
+<h1>Java &gt;= 10 features that grabbed my attention</h1>
+<div class="fragment">
+<pre><code>Useful for FP
+
+JEP 395: Records (https://openjdk.java.net/jeps/395)
+JEP 361: Switch Expressions (https://openjdk.java.net/jeps/361)
+JEP 394: Pattern Matching for instanceof (https://openjdk.java.net/jeps/394)
+JEP 406: Pattern Matching for switch (Preview) (https://openjdk.java.net/jeps/406)
+JEP 409: Sealed Classes (https://openjdk.java.net/jeps/409)
+
+Other language features
+
+JEP 378: Text Blocks (https://openjdk.java.net/jeps/378)
+JEP 286: Local-Variable Type Inference (https://openjdk.java.net/jeps/286)
+
+Libraries
+
+JEP 321: HTTP Client (https://openjdk.java.net/jeps/321)
+JEP 266: More Concurrency Updates (https://openjdk.java.net/jeps/266)
+...</code></pre>
+</div>
+</section>
+<section id="java" class="slide level1">
+<h1>Java</h1>
+<div>
+<ul>
+<li class="fragment">Started as a quite imperative language</li>
+<li class="fragment">But more and more functional features and style are popping up</li>
+<li class="fragment">Declarative annotations have took over the norm in the last decade and more</li>
+<li class="fragment">Why is that happening?</li>
+<li class="fragment">How can FP style improve our codebase?</li>
+</ul>
+</div>
+</section>
+<section id="me" class="slide level1">
+<h1>Me</h1>
+<ul>
+<li>FP enthusiast</li>
+<li>Using mostly Scala at the moment</li>
+<li>Strong interest in distributed systems and domain design</li>
+<li>Used to be part of CFC Reporting</li>
+<li>Now in ISF (Store Pick) Orchestration &amp; Planning team</li>
+</ul>
+</section>
+<section id="imperative-programming" class="slide level1">
+<h1>Imperative programming</h1>
+<div>
+<ul>
+<li class="fragment">We command the computer what to do
+<ul>
+<li class="fragment">Step-by-step instructions (statements)</li>
+<li class="fragment">Executed over time (sequence is important)</li>
+</ul></li>
+<li class="fragment">Places (variables) of data that change constantly
+<ul>
+<li class="fragment">Saves memory</li>
+<li class="fragment">Control over memory access (good for optimizations)</li>
+</ul></li>
+<li class="fragment">Hard to follow – we have to keep in mind every change and the order in which changes happen</li>
+</ul>
+</div>
+</section>
+<section id="software-is-not-about-memory-places" class="slide level1">
+<h1>Software is not about memory places</h1>
+<div>
+<ul>
+<li class="fragment">The heart of a software is working with information</li>
+<li class="fragment">and transforming information to something useful</li>
+<li class="fragment">Information is a collection of facts
+<ul>
+<li class="fragment">data, events, actions, time passing, …</li>
+</ul></li>
+<li class="fragment">Which lead to derived (often aggregated) facts and actions taken
+<ul>
+<li class="fragment">actions from software perspective is sending a derived fact to another component/system</li>
+</ul></li>
+<li class="fragment">Facts are values</li>
+<li class="fragment">They don’t change!</li>
+<li class="fragment"><a href="https://www.youtube.com/watch?v=-I-VpPMzG7c">“The Value of Values”, Rich Hickey</a></li>
+</ul>
+</div>
+</section>
+<section id="functional-programs" class="slide level1">
+<h1>Functional Programs</h1>
+<div>
+<ul>
+<li class="fragment"><p>They describe transformations of values</p></li>
+<li class="fragment"><p>Declarative – we describe “what” we want to get instead of “how” to get it</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">val</span> top100Adults <span class="op">=</span> competitors</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">filter</span><span class="op">(</span>_<span class="op">.</span>age <span class="op">&gt;=</span> <span class="dv">18</span><span class="op">)</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">map</span><span class="op">(</span>_<span class="op">.</span>score<span class="op">)</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">sorted</span><span class="op">(</span>Ordering<span class="op">[</span><span class="bu">Int</span><span class="op">].</span>reverse<span class="op">)</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">take</span><span class="op">(</span><span class="dv">100</span><span class="op">)</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">val</span> top100AdultsAverage <span class="op">=</span> top100Adults<span class="op">.</span>avg</span></code></pre></div></li>
+<li class="fragment"><p>A composition of expressions and definitions</p>
+<ul>
+<li class="fragment">each expression has a value and a type</li>
+</ul></li>
+<li class="fragment"><p>Expressions are the only thing that define dependencies!</p>
+<ul>
+<li class="fragment">as there is nothing that can change. Just new values produced</li>
+</ul></li>
+</ul>
+</div>
+</section>
+<section id="functional-programs-1" class="slide level1">
+<h1>Functional Programs</h1>
+<div>
+<ul>
+<li class="fragment">Easy to follow and to reason about
+<ul>
+<li class="fragment">Every variable is always the same, it always has the same meaning</li>
+<li class="fragment">The time has “stopped”</li>
+</ul></li>
+<li class="fragment">Easy to compose different parts
+<ul>
+<li class="fragment">What matters is only their value</li>
+<li class="fragment">We just have to match the types and the compiler helps us with that</li>
+<li class="fragment">“Guided by the types”</li>
+</ul></li>
+<li class="fragment">Constraints enable!</li>
+</ul>
+</div>
+</section>
+<section id="buut-doesnt-things-change-over-time" class="slide level1">
+<h1>Buut… Doesn’t Things Change Over Time?</h1>
+<div class="sourceCode" id="cb3"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>var oldZdravko <span class="op">=</span> <span class="kw">new</span> <span class="fu">Person</span><span class="op">(</span><span class="st">&quot;Zdravko&quot;</span><span class="op">,</span> <span class="dv">32</span><span class="op">,</span> <span class="st">&quot;Varna&quot;</span><span class="op">,</span> <span class="st">&quot;Bulgarian&quot;</span><span class="op">);</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>var newZdravko <span class="op">=</span> oldZdravko</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>       <span class="op">.</span><span class="fu">withAge</span><span class="op">(</span>oldZdravko<span class="op">.</span><span class="fu">age</span><span class="op">()</span> <span class="op">+</span> <span class="dv">1</span><span class="op">)</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>       <span class="op">.</span><span class="fu">withAddress</span><span class="op">(</span><span class="st">&quot;Sofia&quot;</span><span class="op">);</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>oldZdravko<span class="op">.</span><span class="fu">sayHiTo</span><span class="op">(</span>newZdravko<span class="op">);</span></span></code></pre></div>
+<div>
+<ul>
+<li class="fragment">Both versions are a fact that was true at certain point in time</li>
+<li class="fragment">Immutable values give us a snapshot in time</li>
+<li class="fragment">A thing that can be identified and changes over time is called <strong>an entity</strong>
+<ul>
+<li class="fragment">often we are interested in the latest state of an entity</li>
+<li class="fragment">but previous ones bring us additional information</li>
+</ul></li>
+</ul>
+</div>
+</section>
+<section id="but-for-a-result-to-be-observed-shouldnt-we-make-changes" class="slide level1">
+<h1>But for a result to be observed shouldn’t we make changes?</h1>
+<div>
+<ul>
+<li class="fragment">A.k.a. do a side effect?</li>
+<li class="fragment">In the end we do need to tell the computer what to do</li>
+<li class="fragment">When using FP we push such side effects to just specific (and controlled) places, usually the outer edges of the program</li>
+</ul>
+</div>
+</section>
+<section id="functional-wizard" class="slide level1">
+<h1>Functional Wizard</h1>
+<p><img data-src="images/functional-wizard.png" height="512" /></p>
+<p>Controls time &amp; space</p>
+</section>
+<section id="there-is-actually-a-space-for-both" class="slide level1">
+<h1>There is actually a space for both</h1>
+<ul>
+<li>Imperative is invaluable for some algorithms and performance optimizations</li>
+<li>Functional makes the rest of the program easier to implement, grasp and compose</li>
+</ul>
+</section>
+<section id="how-can-we-achieve-immutable-values-in-java" class="slide level1">
+<h1>How can we achieve immutable values in Java?</h1>
+<div>
+<ul>
+<li class="fragment">Basic Java types (primitives and Strings) are immutable</li>
+<li class="fragment">Immutable values are easily composed into more complex structures</li>
+<li class="fragment">Algebraic Data Types – a type formed by combining other types
+<ul>
+<li class="fragment">Product types (Java 16 Records)</li>
+<li class="fragment">Sum types (Java 17 sealed types and patern matching for switch)</li>
+<li class="fragment">Exponential types (Java 8 function types)</li>
+</ul></li>
+</ul>
+</div>
+</section>
+<section id="product-types" class="slide level1">
+<h1>Product types</h1>
+<div>
+<ul>
+<li class="fragment">A cartesian product of simpler types
+<ul>
+<li class="fragment">model a “has-a” relationship</li>
+</ul></li>
+<li class="fragment"><code>Type1 x Type2 x Type3 x ...</code></li>
+<li class="fragment">Often denoted as <code>(Type1, Type2, Type3, ...)</code></li>
+<li class="fragment">A product type has <code>|Type1| * |Type2| * |Type3| * ...</code> possible instances</li>
+<li class="fragment">Example: <code>(boolean, byte)</code> is a product type</li>
+<li class="fragment">It has <code>2 * 256</code> possible values</li>
+</ul>
+</div>
+</section>
+<section id="records" class="slide level1">
+<h1>Records</h1>
+<p>Records are named product types</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>record <span class="fu">Person</span><span class="op">(</span><span class="bu">String</span> name<span class="op">,</span> <span class="dt">int</span> age<span class="op">,</span> <span class="bu">String</span> location<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">public</span> <span class="bu">String</span> <span class="fu">sayHi</span><span class="op">()</span> <span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">String</span><span class="op">.</span><span class="fu">format</span><span class="op">(</span><span class="st">&quot;Hello, I am </span><span class="sc">%s</span><span class="st"> from $s.&quot;</span><span class="op">,</span> name<span class="op">,</span> location<span class="op">);</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>var geri <span class="op">=</span> <span class="kw">new</span> <span class="fu">Person</span><span class="op">(</span><span class="st">&quot;Geri&quot;</span><span class="op">,</span> <span class="dv">30</span><span class="op">,</span> <span class="st">&quot;Plovdiv&quot;</span><span class="op">);</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>var extendedGreeting <span class="op">=</span> <span class="bu">String</span><span class="op">.</span><span class="fu">format</span><span class="op">(</span><span class="st">&quot;</span><span class="sc">%s</span><span class="st"> I am </span><span class="sc">%d</span><span class="st"> years old.&quot;</span><span class="op">,</span> </span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        geri<span class="op">.</span><span class="fu">sayHi</span><span class="op">(),</span> geri<span class="op">.</span><span class="fu">age</span><span class="op">());</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co">// Hello, I am Geri from Plovdiv. I am 30 years old.</span></span></code></pre></div>
+<div class="fragment">
+<p>They cannot be mutated. Once instantiated their value is fixed</p>
+</div>
+</section>
+<section id="partial-initialization-is-a-source-for-bugs" class="slide level1">
+<h1>Partial initialization is a source for bugs</h1>
+<p>If <code>Person</code> was a Java Bean:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>var geri <span class="op">=</span> <span class="kw">new</span> <span class="fu">Person</span><span class="op">();</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>geri<span class="op">.</span><span class="fu">setName</span><span class="op">(</span><span class="st">&quot;Geri&quot;</span><span class="op">);</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>geri<span class="op">.</span><span class="fu">setLocation</span><span class="op">(</span><span class="st">&quot;Plovdiv&quot;</span><span class="op">);</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co">// ...</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>var extendedGreeting <span class="op">=</span> <span class="bu">String</span><span class="op">.</span><span class="fu">format</span><span class="op">(</span><span class="st">&quot;</span><span class="sc">%s</span><span class="st"> I am </span><span class="sc">%d</span><span class="st"> years old.&quot;</span><span class="op">,</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        geri<span class="op">.</span><span class="fu">sayHi</span><span class="op">(),</span> geri<span class="op">.</span><span class="fu">age</span><span class="op">());</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Hello, I am Geri from Plovdiv. I am null years old.</span></span></code></pre></div>
+<div>
+<ul>
+<li class="fragment">No one told us that we forgot the age</li>
+<li class="fragment">If we add a property the compiler won’t complain it’s not initialized</li>
+<li class="fragment">Partial (incomplete) data is hard to work with (especially when unexpected)
+<ul>
+<li class="fragment">Records guarantee all data is there and safe to work with</li>
+</ul></li>
+<li class="fragment">Thread unsafe – Java doesn’t guarantee us that if we share <code>geri</code> with another thread it will see its values</li>
+</ul>
+</div>
+</section>
+<section id="group-related-values-into-their-own-meaningful-records" class="slide level1">
+<h1>Group related values into their own meaningful records</h1>
+<div class="sourceCode" id="cb6"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>record <span class="fu">Person</span><span class="op">(</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">String</span> name<span class="op">,</span> </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> age<span class="op">,</span> </span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">String</span> country<span class="op">,</span> </span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">String</span> city<span class="op">,</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">String</span> street</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="op">)</span> <span class="op">{}</span></span></code></pre></div>
+<div class="fragment">
+<p>Instead do:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>record <span class="fu">Address</span><span class="op">(</span><span class="bu">String</span> country<span class="op">,</span> <span class="bu">String</span> city<span class="op">,</span> <span class="bu">String</span> street<span class="op">)</span> <span class="op">{}</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>record <span class="fu">Person</span><span class="op">(</span><span class="bu">String</span> name<span class="op">,</span> <span class="dt">int</span> age<span class="op">,</span> Address address<span class="op">)</span> <span class="op">{}</span></span></code></pre></div>
+</div>
+<div>
+<ul>
+<li class="fragment">Easier to understand (each part of the record has specific semantic)</li>
+<li class="fragment">Address can be reused and transformed on its own</li>
+<li class="fragment">A composition</li>
+</ul>
+</div>
+</section>
+<section id="put-proper-domain-boundaries-between-values-and-between-entities-depending-on-the-context" class="slide level1">
+<h1>Put proper domain boundaries between values and between entities<br />(depending on the context)</h1>
+<div>
+<ul>
+<li class="fragment">Most of the time a person is not defined by their bank account. The bank account can be seen as a separate concern</li>
+<li class="fragment">A self-contained entity is often called Aggregate and defines transactional boundaries</li>
+</ul>
+</div>
+</section>
+<section id="immutable-records-in-time" class="slide level1">
+<h1>Immutable Records in Time</h1>
+<div class="sourceCode" id="cb8"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> record <span class="fu">Person</span><span class="op">(</span><span class="bu">String</span> name<span class="op">,</span> <span class="dt">int</span> age<span class="op">,</span> Address address<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>   <span class="kw">public</span> Person <span class="fu">getOlder</span><span class="op">()</span> <span class="op">{</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>       <span class="cf">return</span> <span class="kw">new</span> <span class="fu">Person</span><span class="op">(</span>name<span class="op">,</span> age <span class="op">+</span> <span class="dv">1</span><span class="op">,</span> address<span class="op">);</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>   <span class="op">}</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> record <span class="fu">Address</span><span class="op">(</span><span class="bu">String</span> country<span class="op">,</span> <span class="bu">String</span> city<span class="op">,</span> <span class="bu">String</span> street<span class="op">)</span> <span class="op">{}</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>var youngRadost <span class="op">=</span> <span class="kw">new</span> <span class="fu">Person</span><span class="op">(</span><span class="st">&quot;Radost&quot;</span><span class="op">,</span> <span class="dv">24</span><span class="op">,</span> <span class="kw">new</span> <span class="fu">Address</span><span class="op">(</span><span class="st">&quot;Bulgaria&quot;</span><span class="op">,</span> <span class="st">&quot;Veliko Tarnovo&quot;</span><span class="op">,</span> <span class="st">&quot;ul. Roza&quot;</span><span class="op">));</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>var olderRadost <span class="op">=</span> youngRadost<span class="op">.</span><span class="fu">getOlder</span><span class="op">();</span></span></code></pre></div>
+<div class="fragment">
+<p><img data-src="images/shared-objects.jpg" height="300" /></p>
+</div>
+</section>
+<section id="immutable-records-in-time-1" class="slide level1">
+<h1>Immutable Records in Time</h1>
+<div class="sourceCode" id="cb9"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> record <span class="fu">Person</span><span class="op">(</span><span class="bu">String</span> name<span class="op">,</span> <span class="dt">int</span> age<span class="op">,</span> Address address<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>   <span class="kw">public</span> Person <span class="fu">getOlder</span><span class="op">()</span> <span class="op">{</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>       <span class="cf">return</span> <span class="kw">new</span> <span class="fu">Person</span><span class="op">(</span>name<span class="op">,</span> age <span class="op">+</span> <span class="dv">1</span><span class="op">,</span> address<span class="op">);</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>   <span class="op">}</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> record <span class="fu">Address</span><span class="op">(</span><span class="bu">String</span> country<span class="op">,</span> <span class="bu">String</span> city<span class="op">,</span> <span class="bu">String</span> street<span class="op">)</span> <span class="op">{}</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>var youngRadost <span class="op">=</span> <span class="kw">new</span> <span class="fu">Person</span><span class="op">(</span><span class="st">&quot;Radost&quot;</span><span class="op">,</span> <span class="dv">24</span><span class="op">,</span> <span class="kw">new</span> <span class="fu">Address</span><span class="op">(</span><span class="st">&quot;Bulgaria&quot;</span><span class="op">,</span> <span class="st">&quot;Veliko Tarnovo&quot;</span><span class="op">,</span> <span class="st">&quot;ul. Roza&quot;</span><span class="op">));</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>var olderRadost <span class="op">=</span> youngRadost<span class="op">.</span><span class="fu">getOlder</span><span class="op">();</span></span></code></pre></div>
+<p>Immutability enables:</p>
+<ul>
+<li>Persistence – both <code>youngRadost</code> and <code>olderRadost</code> remain valid objects.
+<ul>
+<li>Helps with code robustness, especially in concurrent and multi-threaded environments</li>
+</ul></li>
+<li>Structural sharing
+<ul>
+<li>Both objects share most of its internal objects</li>
+<li>We didn’t have to copy the whole state so it was a fast (constant) operation.</li>
+</ul></li>
+</ul>
+</section>
+<section id="what-other-value-objects-do-we-have" class="slide level1">
+<h1>What other value objects do we have?</h1>
+<div>
+<ul>
+<li class="fragment">Data structures</li>
+<li class="fragment">They can be part of a product type, just like any other value type</li>
+<li class="fragment">Java comes with only mutable data structures, which negate many of the benefits and can cause problems</li>
+</ul>
+</div>
+</section>
+<section id="immutable-data-structures" class="slide level1">
+<h1>Immutable data structures</h1>
+<div class="fragment">
+<p>We will use <a href="https://www.vavr.io/">Vavr</a> for the examples</p>
+</div>
+</section>
+<section id="immutable-list" class="slide level1">
+<h1>Immutable List</h1>
+<div class="sourceCode" id="cb10"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="im">io</span><span class="op">.</span><span class="im">vavr</span><span class="op">.</span><span class="im">collection</span><span class="op">.</span><span class="im">List</span><span class="op">;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>var xs <span class="op">=</span> <span class="bu">List</span><span class="op">.</span><span class="fu">of</span><span class="op">(</span><span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">);</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>xs<span class="op">.</span><span class="fu">head</span><span class="op">();</span> <span class="co">// 1</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>xs<span class="op">.</span><span class="fu">tail</span><span class="op">();</span> <span class="co">// List(2, 3)</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>var emptyList <span class="op">=</span> <span class="bu">List</span><span class="op">.&lt;</span><span class="bu">Integer</span><span class="op">&gt;</span> <span class="fu">empty</span><span class="op">();</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>var singleElementList <span class="op">=</span> emptyList<span class="op">.</span><span class="fu">prepend</span><span class="op">(</span><span class="dv">3</span><span class="op">);</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>var multiElementList <span class="op">=</span> singleElementList<span class="op">.</span><span class="fu">prepend</span><span class="op">(</span><span class="dv">2</span><span class="op">).</span><span class="fu">prepend</span><span class="op">(</span><span class="dv">1</span><span class="op">).</span><span class="fu">prepend</span><span class="op">(</span><span class="dv">0</span><span class="op">);</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>multiElementList<span class="op">.</span><span class="fu">take</span><span class="op">(</span><span class="dv">2</span><span class="op">);</span> <span class="co">// List(0, 1)</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>multiElementList<span class="op">.</span><span class="fu">drop</span><span class="op">(</span><span class="dv">2</span><span class="op">);</span> <span class="co">// List(2, 3)</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>multiElementList<span class="op">.</span><span class="fu">size</span><span class="op">();</span> <span class="co">// 4; works in linear time</span></span></code></pre></div>
+</section>
+<section id="how-does-list-work" class="slide level1">
+<h1>How does List work?</h1>
+<div class="sourceCode" id="cb11"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>var a <span class="op">=</span> <span class="bu">List</span><span class="op">.</span><span class="fu">of</span><span class="op">(</span><span class="dv">3</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">1</span><span class="op">);</span></span></code></pre></div>
+<div class="fragment">
+<p><img data-src="images/list.jpg" height="120" /></p>
+</div>
+</section>
+<section id="how-does-list-work-1" class="slide level1">
+<h1>How does List work?</h1>
+<div class="sourceCode" id="cb12"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>var a <span class="op">=</span> <span class="bu">List</span><span class="op">.</span><span class="fu">of</span><span class="op">(</span><span class="dv">3</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">1</span><span class="op">);</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>var b <span class="op">=</span> a<span class="op">.</span><span class="fu">prepend</span><span class="op">(</span><span class="dv">4</span><span class="op">);</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>var c <span class="op">=</span> a<span class="op">.</span><span class="fu">tail</span><span class="op">().</span><span class="fu">prepend</span><span class="op">(</span><span class="dv">5</span><span class="op">);</span></span></code></pre></div>
+<div class="fragment">
+<p><img data-src="images/multple-lists.jpg" height="240" /></p>
+</div>
+<div>
+<ul>
+<li class="fragment">Persistence</li>
+<li class="fragment">Structural sharing</li>
+<li class="fragment">If any variable goes out of scope any unused remaining objects will be GCed</li>
+</ul>
+</div>
+</section>
+<section id="adding-an-element-to-the-end" class="slide level1">
+<h1>Adding an element to the end</h1>
+<div class="sourceCode" id="cb13"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>var a <span class="op">=</span> <span class="bu">List</span><span class="op">.</span><span class="fu">of</span><span class="op">(</span><span class="dv">3</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">1</span><span class="op">);</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>var d <span class="op">=</span> a<span class="op">.</span><span class="fu">append</span><span class="op">(</span><span class="dv">0</span><span class="op">);</span></span></code></pre></div>
+<div class="fragment">
+<p><img data-src="images/list-append.jpg" height="240" /></p>
+</div>
+<div class="fragment">
+<p>We cannot share common objects here. The operation is linear</p>
+</div>
+</section>
+<section id="vector-efficient-random-access" class="slide level1">
+<h1>Vector – efficient random access</h1>
+<div class="sourceCode" id="cb14"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>var v1 <span class="op">=</span> <span class="bu">Vector</span><span class="op">.</span><span class="fu">of</span><span class="op">(</span><span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">5</span><span class="op">,</span> <span class="dv">6</span><span class="op">,</span> <span class="dv">7</span><span class="op">);</span></span></code></pre></div>
+<div class="fragment">
+<p><img data-src="images/vector.jpg" height="380" /></p>
+</div>
+<div class="fragment">
+<p>A balanced tree</p>
+</div>
+</section>
+<section id="vector-efficient-random-access-1" class="slide level1">
+<h1>Vector – efficient random access</h1>
+<div class="sourceCode" id="cb15"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>var v1 <span class="op">=</span> <span class="bu">Vector</span><span class="op">.</span><span class="fu">of</span><span class="op">(</span><span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">5</span><span class="op">,</span> <span class="dv">6</span><span class="op">,</span> <span class="dv">7</span><span class="op">);</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>v1<span class="op">.</span><span class="fu">head</span><span class="op">();</span> <span class="co">// 1</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>v1<span class="op">.</span><span class="fu">last</span><span class="op">();</span> <span class="co">// 7</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>v1<span class="op">.</span><span class="fu">get</span><span class="op">(</span><span class="dv">4</span><span class="op">);</span> <span class="co">// 5</span></span></code></pre></div>
+<div class="fragment">
+<p><img data-src="images/vector.jpg" height="380" /></p>
+</div>
+<div class="fragment">
+<p>All three operations have the same complexity – log<sub>2</sub>n</p>
+</div>
+</section>
+<section id="vector-replacing-an-element" class="slide level1">
+<h1>Vector – replacing an element</h1>
+<div class="sourceCode" id="cb16"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>var v1 <span class="op">=</span> <span class="bu">Vector</span><span class="op">.</span><span class="fu">of</span><span class="op">(</span><span class="dv">1</span><span class="op">,</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">3</span><span class="op">,</span> <span class="dv">4</span><span class="op">,</span> <span class="dv">5</span><span class="op">,</span> <span class="dv">6</span><span class="op">,</span> <span class="dv">7</span><span class="op">);</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>var v2 <span class="op">=</span> v1<span class="op">.</span><span class="fu">update</span><span class="op">(</span><span class="dv">5</span><span class="op">,</span> <span class="dv">42</span><span class="op">);</span></span></code></pre></div>
+<div class="fragment">
+<p><img data-src="images/vector-update.jpg" height="420" /></p>
+</div>
+</section>
+<section id="vector-in-vavr" class="slide level1">
+<h1>Vector in Vavr</h1>
+<ul>
+<li>A tree with 32 children for each node</li>
+<li>The complexity of operations is log<sub>32</sub>n
+<ul>
+<li>This is considered “effectively constant”</li>
+</ul></li>
+<li>Useful when random access to elements is needed</li>
+<li>The structure is called <a href="https://docs.google.com/presentation/d/1GY0p2P-BzPfWspKoMRxOQ87fG01t4oMJ1PJxjxGFurQ/edit">Radix Balanced Tree</a></li>
+</ul>
+</section>
+<section id="other-structures" class="slide level1">
+<h1>Other Structures</h1>
+<ul>
+<li>HashSet and HashMap
+<ul>
+<li>Similar idea</li>
+<li>Implemented via Hash array mapped trie <a href="https://lampwww.epfl.ch/papers/idealhashtrees.pdf">HAMT</a></li>
+</ul></li>
+<li>SortedSet and SortedMap
+<ul>
+<li>Red-Black trees are perfect for immutable data structures</li>
+</ul></li>
+<li>Queue, PriorityQueue</li>
+</ul>
+</section>
+<section id="benefits-when-using-immutable-values-thus-far" class="slide level1">
+<h1>Benefits when using immutable values<br />(thus far)</h1>
+<div>
+<ul>
+<li class="fragment">Persistence and structural sharing</li>
+<li class="fragment">Safe sharing between components
+<ul>
+<li class="fragment">No need for “ownership” concept. No one own it</li>
+<li class="fragment">GC takes care to free up unused stuff</li>
+<li class="fragment">No need for defensive copying when nothing can change</li>
+</ul></li>
+<li class="fragment">Especially helpful for concurrent systems (more on this later)</li>
+<li class="fragment">Everything has clear inputs and outputs
+<ul>
+<li class="fragment"><code>void</code> function signatures tell you nothing</li>
+</ul></li>
+<li class="fragment">Composable</li>
+<li class="fragment">Reproducible results
+<ul>
+<li class="fragment">The same input always lead to the same output</li>
+<li class="fragment">Perfect for tests</li>
+</ul></li>
+</ul>
+</div>
+</section>
+<section id="sum-types" class="slide level1">
+<h1>Sum Types</h1>
+<div>
+<ul>
+<li class="fragment">A disjoint union of types
+<ul>
+<li class="fragment">model a “is-a” relationship</li>
+</ul></li>
+<li class="fragment"><code>type ABCSum = A | B | C</code> – either <code>A</code> or <code>B</code> or <code>C</code></li>
+<li class="fragment"><code>|ABCSum| = |A| + |B| + |C|</code></li>
+<li class="fragment"><code>Byte | Boolean</code> has 2 + 256 = 258 elements</li>
+</ul>
+</div>
+</section>
+<section id="enums-are-sum-types" class="slide level1">
+<h1>Enums are Sum Types</h1>
+<p><code>type Suit = Clubs | Diamonds | Hearts | Spades</code>:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">enum</span> Suit <span class="op">{</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    Clubs<span class="op">,</span> Diamonds<span class="op">,</span> Hearts<span class="op">,</span> Spades<span class="op">;</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</section>
+<section id="a-sum-type-of-product-types-sealed-types" class="slide level1">
+<h1>A Sum Type of Product Types (<a href="https://openjdk.java.net/jeps/409">Sealed Types</a>)</h1>
+<div class="sourceCode" id="cb18"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> sealed <span class="kw">interface</span> Whereabouts <span class="op">{</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>   record <span class="fu">AtLocation</span><span class="op">(</span><span class="bu">String</span> locationId<span class="op">)</span> <span class="kw">implements</span> Whereabouts <span class="op">{}</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>   record <span class="fu">InContainer</span><span class="op">(</span><span class="bu">String</span> containerId<span class="op">,</span> <span class="bu">String</span> containerPosition<span class="op">)</span> <span class="kw">implements</span> Whereabouts <span class="op">{}</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>   record <span class="fu">InMover</span><span class="op">(</span><span class="bu">String</span> moverId<span class="op">)</span> <span class="kw">implements</span> Whereabouts <span class="op">{}</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div>
+<ul>
+<li class="fragment"><code>sealed</code> says no other implementations of <code>Whereabouts</code> exists apart from the listed here</li>
+<li class="fragment">This a domain-specific sum type</li>
+<li class="fragment">They are actually quite common in domains</li>
+</ul>
+</div>
+</section>
+<section id="working-with-alternatives" class="slide level1">
+<h1>Working with alternatives</h1>
+<div>
+<ul>
+<li class="fragment"><code>type Whereabouts = AtLocation | InContainer | InMover</code> suggests that we need to branch depending on the case</li>
+<li class="fragment">To make this easy Java introduced two improvements on switch:
+<ul>
+<li class="fragment">made it an expression</li>
+<li class="fragment">branching per type (a.k.a. switch pattern matching)</li>
+</ul></li>
+</ul>
+</div>
+<div class="fragment">
+<div class="sourceCode" id="cb19"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="bu">String</span> <span class="fu">describeWhereabouts</span><span class="op">(</span>Whereabouts whereabouts<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>   <span class="cf">return</span> <span class="cf">switch</span> <span class="op">(</span>whereabouts<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>       <span class="cf">case</span> Whereabouts<span class="op">.</span><span class="fu">AtLocation</span> atLocation <span class="op">-&gt;</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>               <span class="bu">String</span><span class="op">.</span><span class="fu">format</span><span class="op">(</span><span class="st">&quot;At location: </span><span class="sc">%s</span><span class="st">: &quot;</span><span class="op">,</span> atLocation<span class="op">.</span><span class="fu">locationId</span><span class="op">());</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>       <span class="cf">case</span> Whereabouts<span class="op">.</span><span class="fu">InContainer</span> inContainer <span class="op">-&gt;</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>               <span class="bu">String</span><span class="op">.</span><span class="fu">format</span><span class="op">(</span><span class="st">&quot;In container: </span><span class="sc">%s</span><span class="st">: &quot;</span><span class="op">,</span> inContainer<span class="op">.</span><span class="fu">containerId</span><span class="op">());</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>       <span class="cf">case</span> Whereabouts<span class="op">.</span><span class="fu">InMover</span> inMover <span class="op">-&gt;</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>               <span class="bu">String</span><span class="op">.</span><span class="fu">format</span><span class="op">(</span><span class="st">&quot;In mover: </span><span class="sc">%s</span><span class="st"> &quot;</span><span class="op">,</span> inMover<span class="op">.</span><span class="fu">moverId</span><span class="op">());</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>   <span class="op">};</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</div>
+</section>
+<section id="if-we-miss-a-case-it-wont-compile" class="slide level1">
+<h1>If we miss a case it won’t compile</h1>
+<div class="sourceCode" id="cb20"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="bu">String</span> <span class="fu">describeWhereabouts</span><span class="op">(</span>Whereabouts whereabouts<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>   <span class="cf">return</span> <span class="cf">switch</span> <span class="op">(</span>whereabouts<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>       <span class="cf">case</span> Whereabouts<span class="op">.</span><span class="fu">AtLocation</span> atLocation <span class="op">-&gt;</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>               <span class="bu">String</span><span class="op">.</span><span class="fu">format</span><span class="op">(</span><span class="st">&quot;At location: </span><span class="sc">%s</span><span class="st">: &quot;</span><span class="op">,</span> atLocation<span class="op">.</span><span class="fu">locationId</span><span class="op">());</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>       <span class="cf">case</span> Whereabouts<span class="op">.</span><span class="fu">InContainer</span> inContainer <span class="op">-&gt;</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>               <span class="bu">String</span><span class="op">.</span><span class="fu">format</span><span class="op">(</span><span class="st">&quot;In container: </span><span class="sc">%s</span><span class="st">: &quot;</span><span class="op">,</span> inContainer<span class="op">.</span><span class="fu">containerId</span><span class="op">());</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>   <span class="op">};</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a><span class="co">// error: the switch expression does not cover all possible input values</span></span></code></pre></div>
+</section>
+<section id="sum-types-vs-oop" class="slide level1">
+<h1>Sum types vs OOP</h1>
+<div>
+<ul>
+<li class="fragment">Sum types are exhaustive – no other variant can appear
+<ul>
+<li class="fragment">Adding a variant automatically breaks the code at compile time</li>
+</ul></li>
+<li class="fragment">OOP subtype polymorphism has unrestricted subtyping
+<ul>
+<li class="fragment">Anyone can add a variant at any time. They just need to follow the interface</li>
+<li class="fragment">Adding an operation automatically breaks the code at compile time</li>
+</ul></li>
+<li class="fragment">There are types suited for sum typing and types suited for OOP
+<ul>
+<li class="fragment">Know the difference. Choosing the right one can help or domain design a lot</li>
+</ul></li>
+</ul>
+</div>
+</section>
+<section id="sum-type-make-illegal-states-unrepresentable" class="slide level1">
+<h1>Sum Type – Make Illegal States Unrepresentable</h1>
+<p>What if we have implemented <code>Whereabouts</code> like this:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">enum</span> WhereaboutsType <span class="op">{</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    AtLocation<span class="op">,</span> InContainer<span class="op">,</span> InMover</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>record <span class="fu">Whereabouts</span><span class="op">(</span>WhereaboutsType whereaboutsType<span class="op">,</span> <span class="bu">String</span> entityId<span class="op">,</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>                   <span class="bu">String</span> containerPosition<span class="op">)</span> <span class="op">{}</span></span></code></pre></div>
+<div>
+<ul>
+<li class="fragment">This pattern can be seen often in Java</li>
+<li class="fragment"><code>containerPosition</code> should be illegal for <code>AtLocation</code> and <code>InMover</code>. This definition doesn’t communicate that</li>
+<li class="fragment"><code>entityId</code> becomes quite a generic name and requires all the IDs to be of the same type. It’s quite easy to mix them up</li>
+</ul>
+</div>
+</section>
+<section id="interoperability-with-typescript" class="slide level1">
+<h1>Interoperability with TypeScript</h1>
+<div class="sourceCode" id="cb22"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> Whereabouts <span class="op">=</span> AtLocation <span class="op">|</span> InContainer <span class="op">|</span> InMover</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> AtLocation <span class="op">=</span> {</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  type<span class="op">:</span> <span class="st">&quot;AtLocation&quot;</span><span class="op">,</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  locationId<span class="op">:</span> <span class="dt">string</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> InContainer <span class="op">=</span> {</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>  type<span class="op">:</span> <span class="st">&quot;InLocation&quot;</span><span class="op">,</span></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>  containerId<span class="op">:</span> <span class="dt">string</span><span class="op">,</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>  containerPosition<span class="op">:</span> <span class="dt">string</span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> InMover <span class="op">=</span> {</span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>  type<span class="op">:</span> <span class="st">&quot;InMover&quot;</span><span class="op">,</span></span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>  moverId<span class="op">:</span> <span class="dt">string</span></span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+</section>
+<section id="interoperability-with-typescript-1" class="slide level1">
+<h1>Interoperability with TypeScript</h1>
+<div class="sourceCode" id="cb23"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">describeWhereabouts</span>(whereabouts<span class="op">:</span> Whereabouts) {</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">switch</span> (whereabouts<span class="op">.</span><span class="at">type</span>) {</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    case <span class="st">&quot;AtLocation&quot;</span><span class="op">:</span> <span class="fu">return</span> <span class="vs">`At location </span><span class="sc">${</span>whereabouts<span class="op">.</span><span class="at">locationId</span><span class="sc">}</span><span class="vs">`</span><span class="op">;</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    case <span class="st">&quot;InContainer&quot;</span><span class="op">:</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">return</span> <span class="vs">`InContainer </span><span class="sc">${</span>whereabouts<span class="op">.</span><span class="at">containerId</span><span class="sc">}</span><span class="vs">(</span><span class="sc">${</span>whereabouts<span class="op">.</span><span class="at">containerPosition</span><span class="sc">}</span><span class="vs">)`</span><span class="op">;</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    case <span class="st">&quot;InMover&quot;</span><span class="op">:</span> <span class="fu">return</span> <span class="vs">`In mover </span><span class="sc">${</span>whereabouts<span class="op">.</span><span class="at">moverId</span><span class="sc">}</span><span class="vs">`</span><span class="op">;</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+</section>
+<section id="describing-possible-states-with-sum-types" class="slide level1">
+<h1>Describing Possible States with Sum Types</h1>
+<div class="sourceCode" id="cb24"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>sealed <span class="kw">interface</span> BeloteRoundState <span class="op">{</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>   record <span class="fu">Initial</span><span class="op">(</span><span class="bu">List</span><span class="op">&lt;</span>Card<span class="op">&gt;</span> deck<span class="op">)</span> <span class="kw">implements</span> BeloteRoundState <span class="op">{}</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>   record <span class="fu">Bidding</span><span class="op">(</span><span class="bu">List</span><span class="op">&lt;</span>Hand<span class="op">&gt;</span> hands<span class="op">,</span> Biddings biddings<span class="op">,</span> <span class="bu">List</span><span class="op">&lt;</span>Card<span class="op">&gt;</span> deck<span class="op">)</span> <span class="kw">implements</span> BeloteRoundState <span class="op">{}</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>   record <span class="fu">Playing</span><span class="op">(</span><span class="bu">List</span><span class="op">&lt;</span>Hand<span class="op">&gt;</span> hands<span class="op">,</span> takes<span class="op">,</span> announcements<span class="op">,</span> <span class="kw">...</span><span class="op">)</span> <span class="kw">implements</span> BeloteRoundState <span class="op">{}</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>   record <span class="fu">Finished</span><span class="op">(</span>takes<span class="op">,</span> announcements<span class="op">,</span> <span class="kw">...</span><span class="op">)</span> <span class="kw">implements</span> BeloteRoundState <span class="op">{}</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="fragment">
+<p>Each of these would probably also have different behaviour</p>
+</div>
+</section>
+<section id="lists-can-be-implemented-as-a-sum-type" class="slide level1">
+<h1>Lists can be implemented as a sum type:</h1>
+<div class="sourceCode" id="cb25"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>sealed <span class="kw">interface</span> <span class="bu">List</span><span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    record Cons<span class="op">&lt;</span>T<span class="op">&gt;(</span>T head<span class="op">,</span> <span class="bu">List</span><span class="op">&lt;</span>T<span class="op">&gt;</span> rest<span class="op">)</span> <span class="kw">implements</span> <span class="bu">List</span><span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">{}</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    record Nil<span class="op">&lt;</span>T<span class="op">&gt;()</span> <span class="kw">implements</span> <span class="bu">List</span><span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">{}</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</section>
+<section id="nulls-are-dangerous.-make-optionality-explicit" class="slide level1">
+<h1><code>null</code>s are dangerous. Make optionality explicit</h1>
+<div class="sourceCode" id="cb26"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>sealed <span class="kw">interface</span> <span class="bu">Option</span><span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    record Some<span class="op">&lt;</span>T<span class="op">&gt;(</span>T element<span class="op">)</span> <span class="kw">implements</span> <span class="bu">Option</span><span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">{}</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    record None<span class="op">&lt;</span>T<span class="op">&gt;()</span> <span class="kw">implements</span> <span class="bu">Option</span><span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">{}</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div class="fragment">
+<div class="sourceCode" id="cb27"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>record <span class="fu">InContainer</span><span class="op">(</span><span class="bu">String</span> containerId<span class="op">,</span> <span class="bu">Option</span><span class="op">&lt;</span><span class="bu">String</span><span class="op">&gt;</span> containerPosition<span class="op">)</span> <span class="op">{}</span></span></code></pre></div>
+</div>
+<div>
+<ul>
+<li class="fragment">Forces you to handle the optionality</li>
+<li class="fragment">Such types come with use case-specific set of helper functions (e.g. <code>map</code>, <code>flatMap</code>, <code>getOrElse</code>, etc) that transform them as values</li>
+</ul>
+</div>
+</section>
+<section id="exceptions-are-not-values" class="slide level1">
+<h1>Exceptions are not values:</h1>
+<div>
+<ul>
+<li class="fragment"><p>Throwing an exception is a side effect</p></li>
+<li class="fragment"><p>Not a value that we can easily transform or share</p></li>
+<li class="fragment"><p>Exception handling is bound to the current thread. It’s not easy to share the exception with other threads</p></li>
+<li class="fragment"><p>Hard to compose:</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span> <span class="op">{</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span> <span class="op">{</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">finally</span> <span class="op">{</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span> <span class="op">{</span></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">try</span> <span class="op">{</span></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">finally</span> <span class="op">{</span></span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">finally</span> <span class="op">{</span></span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span> <span class="cf">finally</span> <span class="op">{</span></span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span> <span class="op">{</span></span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span> <span class="cf">finally</span> <span class="op">{</span></span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div></li>
+</ul>
+</div>
+</section>
+<section id="errors-as-values" class="slide level1">
+<h1>Errors as values:</h1>
+<div class="sourceCode" id="cb29"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Either a success or an exception (as a value)</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>sealed <span class="kw">interface</span> Try<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>    record Success<span class="op">&lt;</span>T<span class="op">&gt;(</span>T value<span class="op">)</span> <span class="kw">implements</span> Try<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">{}</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>    record Failure<span class="op">&lt;</span>T<span class="op">&gt;(</span><span class="bu">Throwable</span> e<span class="op">)</span> <span class="kw">implements</span> Try<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">{}</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Either a success (Right) or a custom error (Left)</span></span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>sealed <span class="kw">interface</span> Either<span class="op">&lt;</span>E<span class="op">,</span> T<span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>    record Right<span class="op">&lt;</span>E<span class="op">,</span> T<span class="op">&gt;(</span>T value<span class="op">)</span> <span class="kw">implements</span> Either<span class="op">&lt;</span>E<span class="op">,</span> T<span class="op">&gt;</span> <span class="op">{}</span></span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>    record Left<span class="op">&lt;</span>E<span class="op">,</span> T<span class="op">&gt;(</span>E e<span class="op">)</span> <span class="kw">implements</span> Either<span class="op">&lt;</span>E<span class="op">,</span> T<span class="op">&gt;</span> <span class="op">{}</span></span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<div>
+<ul>
+<li class="fragment">Errors become values that can easily be transformed and composed</li>
+<li class="fragment">Can be shared between componets, threads or even other systems on the network</li>
+<li class="fragment">Useful for domain-specific error handling
+<ul>
+<li class="fragment">Forces the user to handle the possibility for error (if needed)</li>
+<li class="fragment">For programmer errors and pre-condition checks still prefer exceptions</li>
+</ul></li>
+<li class="fragment">Such types are called <strong>effects</strong></li>
+<li class="fragment">How to use them is a topic of another talk</li>
+</ul>
+</div>
+</section>
+<section id="in-what-other-ways-are-immutable-values-helpful" class="slide level1">
+<h1>In what other ways are immutable values helpful?</h1>
+</section>
+<section id="concurrency" class="slide level1">
+<h1>Concurrency</h1>
+<div class="fragment">
+<div class="sourceCode" id="cb30"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="kw">class</span> Counter <span class="op">{</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="bu">AtomicReference</span><span class="op">&lt;</span><span class="bu">Map</span><span class="op">&lt;</span><span class="bu">Integer</span><span class="op">,</span> <span class="bu">Integer</span><span class="op">&gt;&gt;</span> counters <span class="op">=</span> <span class="kw">new</span> <span class="bu">AtomicReference</span><span class="op">&lt;&gt;(</span><span class="bu">HashMap</span><span class="op">.</span><span class="fu">empty</span><span class="op">());</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span> <span class="dt">void</span> <span class="fu">increment</span><span class="op">(</span><span class="dt">int</span> key<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    counters<span class="op">.</span><span class="fu">updateAndGet</span><span class="op">(</span>currentMap <span class="op">-&gt;</span> <span class="op">{</span></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>      var currentValue <span class="op">=</span> currentMap<span class="op">.</span><span class="fu">getOrElse</span><span class="op">(</span>key<span class="op">,</span> <span class="dv">0</span><span class="op">);</span></span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> currentMap<span class="op">.</span><span class="fu">put</span><span class="op">(</span>key<span class="op">,</span> currentValue <span class="op">+</span> <span class="dv">1</span><span class="op">);</span></span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">});</span></span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">}</span></span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+</div>
+</section>
+<section id="storage" class="slide level1">
+<h1>Storage</h1>
+<ul>
+<li>Append-only logs are everywhere nowadays
+<ul>
+<li>write-ahead logs, LSM (log-structured merge-tree), Kafka as unified log, …</li>
+<li>Each entry is an immutable fact</li>
+<li>storage can easily be replicated or processed just by reading the log</li>
+</ul></li>
+</ul>
+</section>
+<section id="storage-1" class="slide level1">
+<h1>Storage</h1>
+<ul>
+<li>Software-Transactional Memory
+<ul>
+<li>Each entity has a version history marked by transaction id (or a timestamp)</li>
+<li>This allows consistent reads without acquiring any locks</li>
+<li>A transaction manager for updating entities (uses atomic operations instead of logs)</li>
+<li>Fast thanks to structural sharing</li>
+</ul></li>
+<li>MVCC – similar idea for DBs
+<ul>
+<li>Used in PostgreSQL</li>
+<li>Tuples (rows) in PostgreSQL are immutable</li>
+<li>Vacuuming process for garbage collection</li>
+</ul></li>
+</ul>
+</section>
+<section id="distributed-systems" class="slide level1">
+<h1>Distributed Systems</h1>
+<ul>
+<li>Messages that systems exchange are values
+<ul>
+<li>defined by protocols</li>
+</ul></li>
+<li>Communication via events/facts
+<ul>
+<li>Event Sourcing – instead a history of state keep a history of events</li>
+<li>Events capture intent, states don’t</li>
+</ul></li>
+<li>Stream processing</li>
+<li>Big data</li>
+</ul>
+</section>
+<section id="git" class="slide level1">
+<h1>Git</h1>
+<p>Git is a distributed system that use persistent data structures with structural sharing</p>
+</section>
+<section id="ui" class="slide level1">
+<h1>UI</h1>
+<ul>
+<li>Immutability is extremely convenient for UI</li>
+<li>Example: Redux provides one big immutable aggregated value as a state</li>
+<li>There are strict rules on how to update the state</li>
+</ul>
+</section>
+<section id="one-more-front-end-example" class="slide level1">
+<h1>One more front-end example</h1>
+<div>
+<ul>
+<li class="fragment"><p>With redux we often have to track async operations state</p></li>
+<li class="fragment"><p>We end up with properties like:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>{</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  orders<span class="op">:</span> {</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    items<span class="op">:</span> Array<span class="op">&lt;</span>Order<span class="op">&gt;,</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    isLoading<span class="op">:</span> <span class="dt">boolean</span><span class="op">,</span></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    hasError<span class="op">:</span> Error</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div></li>
+<li class="fragment"><p>This can be a nightmare to maintain</p></li>
+</ul>
+</div>
+</section>
+<section id="alternative-asyncresult" class="slide level1">
+<h1>Alternative: <code>AsyncResult</code></h1>
+<div class="sourceCode" id="cb32"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> AsyncResult<span class="op">&lt;</span>E<span class="op">,</span> T<span class="op">&gt;</span> <span class="op">=</span> Success<span class="op">&lt;</span>T<span class="op">&gt;</span> <span class="op">|</span> Failure<span class="op">&lt;</span>E<span class="op">&gt;</span> <span class="op">|</span> IsLoading</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="co">// definitions...</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a><span class="co">// The redux object can then be:</span></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>{</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>  orders<span class="op">:</span> AsyncResult<span class="op">&lt;</span>OrderError<span class="op">,</span> Array<span class="op">&lt;</span>Order<span class="op">&gt;&gt;</span></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="fragment">
+<p>The type should come with utilities to compose <code>AsyncResult</code>s into bigger values</p>
+</div>
+</section>
+<section id="immutability-changes-everything" class="slide level1">
+<h1><a href="https://queue.acm.org/detail.cfm?id=2884038">Immutability Changes Everything</a></h1>
+<p>A review by Pat Helland of uses of immutability in various contexts</p>
+</section>
+<section id="what-if-programs-themselves-were-a-value" class="slide level1">
+<h1>What if programs themselves were a value?</h1>
+<p><img data-src="images/whaaat.webp" class="fragment" /></p>
+</section>
+<section id="programs-as-values" class="slide level1">
+<h1>Programs as values</h1>
+<div class="sourceCode" id="cb33"><pre class="sourceCode scala"><code class="sourceCode scala"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="kw">val</span> program <span class="op">=</span> <span class="cf">for</span> <span class="op">{</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  _     <span class="op">&lt;-</span> IO<span class="op">.</span><span class="fu">println</span><span class="op">(</span><span class="st">&quot;What is your name?&quot;</span><span class="op">)</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  name  <span class="op">&lt;-</span> IO<span class="op">.</span>readln</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  _     <span class="op">&lt;-</span> IO<span class="op">.</span><span class="fu">println</span><span class="op">(</span><span class="ss">s&quot;</span><span class="st">Hello, </span><span class="ss">$name</span><span class="st">, welcome!</span><span class="ss">&quot;</span><span class="op">)</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span> <span class="cf">yield</span> ExitCodes<span class="op">.</span>Success</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Nothing is executed yet</span></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>program<span class="op">.</span><span class="fu">unsafeRun</span><span class="op">()</span> <span class="co">// Explicitly start the side effects</span></span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a><span class="bu">List</span><span class="op">(</span>program<span class="op">,</span> program<span class="op">,</span> program<span class="op">).</span><span class="fu">map</span><span class="op">(</span>_<span class="op">.</span><span class="fu">unsafeRun</span><span class="op">())</span> <span class="co">// Run the program three times</span></span></code></pre></div>
+<div class="fragment">
+<p><a href="https://github.com/scala-fmi/scala-fmi-2021/tree/master/lectures/examples/12-library-app/src/main/scala/fmi/client">Library HTTP Client in Scala</a></p>
+</div>
+</section>
+<section id="questions" class="slide level1">
+<h1>Questions :)?</h1>
+</section>
+<section id="thank-you-for-attending" class="slide level1">
+<h1>Thank you for attending!</h1>
+</section>
+    </div>
+  </div>
+
+  <script src="reveal-js/dist/reveal.js"></script>
+
+  <!-- reveal.js plugins -->
+  <script src="reveal-js/plugin/notes/notes.js"></script>
+  <script src="reveal-js/plugin/search/search.js"></script>
+  <script src="reveal-js/plugin/zoom/zoom.js"></script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+        // Display controls in the bottom right corner
+        controls: true,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: true,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'bottom-right',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: false,
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: false,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: true,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: false,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'default',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: true,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'fade',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'fade',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // reveal.js plugins
+        plugins: [
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    </body>
+</html>
